@@ -16,6 +16,12 @@ export const client = createClient({
   perspective: 'published', // never leak drafts onto the live site
 })
 
+/**
+ * Client for LIVE pages (prerender = false). Uses Sanity's API CDN: fast, cheap on quota,
+ * and Sanity purges it on publish, so changes still show within a few seconds.
+ */
+export const liveClient = client.withConfig({useCdn: true})
+
 /** Run a GROQ query. In demo mode, returns the fallback instead. */
 export async function sanityFetch<T>(query: string, fallback: T, params: Record<string, unknown> = {}): Promise<T> {
   if (!isSanityConfigured) return fallback

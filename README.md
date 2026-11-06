@@ -178,6 +178,43 @@ Then invite the client: **sanity.io/manage → project → Members → Invite** 
 
 ---
 
+## Static vs live pages (the dynamic examples)
+
+Most pages are **printed at build time** (static). A few run as **code on Cloudflare Workers on every visit**. A page opts in with one line: `export const prerender = false`.
+
+| Feature | Kind | Where | What to try |
+|---|---|---|---|
+| Home, Menu, Contact | Static (rebuilt by the Sanity webhook) | `src/pages/index.astro` … | Edit a menu price → wait ~1 min |
+| **"Open now" badge** | Browser-side (JS in the visitor's browser) | `src/components/OpenNow.astro` | Change the hours/timezone in Settings |
+| **Today's Specials** | Live page, reads Sanity on every visit | `src/pages/specials.astro` | Add a *Daily Special* dated today → refresh → instant. Flip "Sold out". |
+| **Book a table** | Live page + API + **D1 database** | `src/pages/reserve.astro`, `src/pages/api/reservations.ts`, `src/lib/reservations.ts` | Book a slot, watch "seats left" drop |
+| **Admin bookings** | Live, password-protected | `src/pages/admin/reservations.astro` | `/admin/reservations/`, any username + `ADMIN_PASSWORD` |
+
+Daily Specials are deliberately **not** in the webhook filter: they never trigger a rebuild, because the live page reads them directly.
+
+### Database (Cloudflare D1)
+
+- Table definition: `web/migrations/0001_reservations.sql`. To change the structure, add `0002_….sql`, never edit old ones.
+- Apply migrations: `npx wrangler d1 migrations apply restaurant-test-db --local` (your laptop) / `--remote` (production)
+- Look at data: `npx wrangler d1 execute restaurant-test-db --remote --command "SELECT * FROM reservations"`
+- Overbooking protection: the capacity check and the insert are **one SQL statement** (`createReservation`). Tested: 5 simultaneous bookings for the last 4 seats → exactly 2 succeed.
+
+### Config and secrets
+
+| What | Local | Production |
+|---|---|---|
+| Plain settings (`SEATS_PER_SLOT`, `RESTAURANT_TIMEZONE`) | `wrangler.jsonc` → `vars` | same file |
+| Secrets (`ADMIN_PASSWORD`) | `web/.dev.vars` (gitignored) | `npx wrangler secret put ADMIN_PASSWORD` |
+| Build-time (`PUBLIC_SANITY_*`, `SITE_URL`) | `web/.env` | Cloudflare → Settings → Build variables |
+
+After changing `wrangler.jsonc`, run `npx wrangler types` to refresh `worker-configuration.d.ts`.
+
+### Run live pages locally
+
+`npm run dev` works for everything. To test on Cloudflare's actual runtime: `npm run build && npx astro preview`.
+
+---
+
 ## Contact form
 
 Uses [Web3Forms](https://web3forms.com) (free, no backend, no card). Enter the client's email there, and they'll receive an access key. Put it in `PUBLIC_WEB3FORMS_KEY`. Submissions arrive in that inbox. The key is designed to be public.

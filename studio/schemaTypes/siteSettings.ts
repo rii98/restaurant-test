@@ -58,6 +58,13 @@ export const siteSettings = defineType({
       group: 'contact',
       description: 'Google Maps → Share → Embed a map → copy only the src="..." URL',
     }),
+    defineField({
+      name: 'timezone',
+      type: 'string',
+      group: 'contact',
+      description: 'IANA timezone, used for the "Open now" badge, e.g. America/Chicago, Asia/Kathmandu',
+      initialValue: 'America/Chicago',
+    }),
     defineField({name: 'hours', type: 'array', of: [{type: 'openingHours'}], group: 'contact'}),
     defineField({
       name: 'social',

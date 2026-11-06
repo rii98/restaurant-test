@@ -2,6 +2,7 @@
 import {defineConfig} from 'astro/config'
 import {loadEnv} from 'vite'
 import sitemap from '@astrojs/sitemap'
+import cloudflare from '@astrojs/cloudflare'
 
 const env = loadEnv(process.env.NODE_ENV ?? 'production', process.cwd(), '')
 
@@ -32,6 +33,18 @@ function resolveSite() {
 
 export default defineConfig({
   site: resolveSite(),
-  output: 'static', // every page is pre-rendered to HTML at build time
-  integrations: [sitemap()],
+  // 'static' = every page is pre-rendered to HTML at build time (fast, free, cached on the CDN)…
+  output: 'static',
+  // …EXCEPT pages that opt out with `export const prerender = false`.
+  // Those run as code on Cloudflare Workers on every request (live data, forms, database).
+  adapter: cloudflare({
+    imageService: 'passthrough', // images come from Sanity's CDN, no Cloudflare Images needed
+  }),
+  session: false, // we don't use Astro sessions, so don't provision a KV store for them
+  integrations: [
+    sitemap({
+      // keep private/live-only routes out of the sitemap
+      filter: (page) => !page.includes('/admin/'),
+    }),
+  ],
 })

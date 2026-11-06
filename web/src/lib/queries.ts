@@ -25,3 +25,10 @@ export const featuredQuery = /* groq */ `
     "category": category->title
   }
 `
+
+// Used by the LIVE /specials/ page — runs on every request, not at build time.
+export const specialsQuery = /* groq */ `
+  *[_type == "special" && date == $today] | order(soldOut asc, _createdAt asc) {
+    _id, title, description, price, date, soldOut, image
+  }
+`

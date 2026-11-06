@@ -1,0 +1,27 @@
+---
+// BROWSER-SIDE DYNAMIC: the page is static, but this badge is computed in the visitor's
+// browser every time, using the restaurant's timezone. Zero server cost.
+import type {OpeningHours} from '../lib/types'
+interface Props { hours?: OpeningHours[]; timeZone?: string }
+const {hours = [], timeZone = 'UTC'} = Astro.props
+---
+<span class="open-now" data-hours={JSON.stringify(hours)} data-tz={timeZone} hidden></span>
+
+<script>
+  function update(el: HTMLElement) {
+    const hours: {day: string; closed?: boolean; opens?: string; closes?: string}[] = JSON.parse(el.dataset.hours ?? '[]')
+    const parts = new Intl.DateTimeFormat('en-US', {timeZone: el.dataset.tz, weekday: 'long', hour: '2-digit', minute: '2-digit', hourCycle: 'h23'})
+      .formatToParts(new Date())
+    const get = (t: string) => parts.find((p) => p.type === t)?.value ?? ''
+    const now = `${get('hour')}:${get('minute')}`
+    const today = hours.find((h) => h.day === get('weekday'))
+    const open = !!today && !today.closed && !!today.opens && !!today.closes && now >= today.opens && now < today.closes
+    el.textContent = open ? `Open now · until ${today!.closes}` : 'Closed now'
+    el.classList.toggle('is-open', open)
+    el.hidden = false
+  }
+  document.querySelectorAll<HTMLElement>('.open-now').forEach((el) => {
+    update(el)
+    setInterval(() => update(el), 60_000) // re-check every minute while the page is open
+  })
+</script>

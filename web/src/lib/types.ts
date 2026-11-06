@@ -30,6 +30,7 @@ export interface SiteSettings {
   email?: string
   address?: {street?: string; city?: string; region?: string; postalCode?: string; country?: string}
   mapEmbedUrl?: string
+  timezone?: string
   hours?: OpeningHours[]
   social?: {instagram?: string; facebook?: string; tiktok?: string}
   heroImage?: SanityImage
@@ -55,4 +56,14 @@ export interface MenuCategory {
   slug: string
   description?: string
   items: MenuItem[]
+}
+
+export interface Special {
+  _id: string
+  title: string
+  description?: string
+  price: number
+  date: string
+  soldOut?: boolean
+  image?: SanityImage
 }

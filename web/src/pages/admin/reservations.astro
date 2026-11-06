@@ -1,0 +1,101 @@
+---
+// PRIVATE LIVE PAGE: the restaurant's booking list. Protected by HTTP Basic Auth
+// (browser shows a username/password popup). Username: anything. Password: ADMIN_PASSWORD secret.
+export const prerender = false
+
+import {getSettings} from '../../lib/data'
+import {runtime, isSameOrigin} from '../../lib/server'
+import {cancelReservation, listUpcoming} from '../../lib/reservations'
+import {prettyDate, todayIn} from '../../lib/time'
+import {formatTime} from '../../lib/format'
+
+const s = await getSettings()
+const {db, timeZone, adminPassword} = runtime(s)
+
+if (!adminPassword) {
+  return new Response('Admin is disabled: set the ADMIN_PASSWORD secret.', {status: 503})
+}
+
+// --- Basic Auth check ---
+const header = Astro.request.headers.get('authorization') ?? ''
+const supplied = header.startsWith('Basic ') ? atob(header.slice(6)).split(':').slice(1).join(':') : ''
+const enc = new TextEncoder()
+const a = enc.encode(supplied)
+const b = enc.encode(adminPassword)
+// timingSafeEqual (Workers-only API) avoids leaking the password through response timing
+const subtle = crypto.subtle as unknown as {timingSafeEqual(x: Uint8Array, y: Uint8Array): boolean}
+const ok = a.byteLength === b.byteLength && subtle.timingSafeEqual(a, b)
+if (!ok) {
+  return new Response('Login required', {status: 401, headers: {'WWW-Authenticate': 'Basic realm="Restaurant admin"'}})
+}
+
+// --- Actions (cancel) ---
+if (Astro.request.method === 'POST') {
+  if (!isSameOrigin(Astro.request)) return new Response('Forbidden', {status: 403})
+  const form = await Astro.request.formData()
+  const id = Number(form.get('id'))
+  if (Number.isInteger(id)) await cancelReservation(db, id)
+  return Astro.redirect('/admin/reservations/', 303)
+}
+
+const today = todayIn(timeZone)
+const rows = await listUpcoming(db, today)
+const byDate = Map.groupBy(rows, (r) => r.date)
+Astro.response.headers.set('Cache-Control', 'no-store')
+Astro.response.headers.set('X-Robots-Tag', 'noindex')
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Reservations · {s.name} admin</title>
+    <style>
+      body { font: 15px/1.5 system-ui, sans-serif; margin: 0; background: #f7f4f0; color: #222; }
+      main { max-width: 960px; margin: 0 auto; padding: 24px 16px 64px; }
+      h1 { margin: 0 0 4px; } h2 { margin: 32px 0 8px; font-size: 1.1rem; }
+      .wrap { overflow-x: auto; background: #fff; border: 1px solid #e3ddd5; border-radius: 10px; }
+      table { border-collapse: collapse; width: 100%; min-width: 640px; }
+      th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid #eee; vertical-align: top; }
+      th { font-size: .8rem; text-transform: uppercase; color: #777; }
+      tr.cancelled td { color: #aaa; text-decoration: line-through; }
+      button { font: inherit; padding: 4px 10px; border: 1px solid #c33; color: #c33; background: #fff; border-radius: 6px; cursor: pointer; }
+      .muted { color: #777; } code { font-weight: 600; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Reservations</h1>
+      <p class="muted">{rows.filter((r) => r.status === 'confirmed').length} upcoming · live from the database · <a href="/">View site</a></p>
+      {rows.length === 0 && <p>No upcoming reservations yet. <a href="/reserve/">Make a test booking</a>.</p>}
+      {[...byDate].map(([date, list]) => (
+        <section>
+          <h2>{prettyDate(date)} — {list.filter((r) => r.status === 'confirmed').reduce((n, r) => n + r.party_size, 0)} guests</h2>
+          <div class="wrap">
+            <table>
+              <thead><tr><th>Time</th><th>Guests</th><th>Name</th><th>Contact</th><th>Notes</th><th>Code</th><th></th></tr></thead>
+              <tbody>
+                {list.map((r) => (
+                  <tr class={r.status}>
+                    <td>{formatTime(r.time)}</td>
+                    <td>{r.party_size}</td>
+                    <td>{r.name}</td>
+                    <td>{r.email}{r.phone && <><br />{r.phone}</>}</td>
+                    <td>{r.notes}</td>
+                    <td><code>{r.code}</code></td>
+                    <td>
+                      {r.status === 'confirmed' && (
+                        <form method="post"><input type="hidden" name="id" value={r.id} /><button>Cancel</button></form>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ))}
+    </main>
+  </body>
+</html>

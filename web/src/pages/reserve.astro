@@ -1,0 +1,84 @@
+---
+// LIVE PAGE: reads seat availability from the database on every visit.
+export const prerender = false
+
+import Base from '../layouts/Base.astro'
+import {getSettings} from '../lib/data'
+import {runtime} from '../lib/server'
+import {getAvailability, MAX_PARTY, BOOKING_WINDOW_DAYS} from '../lib/reservations'
+import {addDays, prettyDate, todayIn} from '../lib/time'
+import {formatTime} from '../lib/format'
+
+const s = await getSettings()
+const {db, timeZone, seatsPerSlot} = runtime(s)
+const today = todayIn(timeZone)
+const params = Astro.url.searchParams
+
+const code = params.get('code')
+const error = params.get('error')
+const requested = params.get('date') ?? today
+const date = requested >= today && requested <= addDays(today, BOOKING_WINDOW_DAYS) ? requested : today
+
+const slots = code ? [] : await getAvailability(db, s, date, seatsPerSlot)
+Astro.response.headers.set('Cache-Control', 'no-store')
+---
+<Base title="Book a table" description={`Reserve a table at ${s.name}.`}>
+  <section class="page-head container narrow">
+    <h1>Book a table</h1>
+  </section>
+
+  <div class="container narrow section-tight">
+    {code ? (
+      <div class="success">
+        <h2>You're booked!</h2>
+        <p class="lead">Your confirmation code is <strong class="code">{code}</strong>.</p>
+        <p>We look forward to seeing you. Need to change something? Call us{s.phone && <> at <a href={`tel:${s.phone.replace(/[^+\d]/g, '')}`}>{s.phone}</a></>}.</p>
+        <a class="btn" href="/reserve/">Make another booking</a>
+      </div>
+    ) : (
+      <>
+        {error && <p class="error" role="alert">{error}</p>}
+
+        {/* Step 1: choose a date (plain GET form → page reloads with ?date=… and fresh availability) */}
+        <form method="get" class="date-picker">
+          <label>Date
+            <input type="date" name="date" value={date} min={today} max={addDays(today, BOOKING_WINDOW_DAYS)} onchange="this.form.submit()" />
+          </label>
+          <noscript><button class="btn btn-small">Check</button></noscript>
+        </form>
+
+        <h2 class="h3">{prettyDate(date)}</h2>
+
+        {slots.length === 0 ? (
+          <p class="notice">We're closed on this day. Please pick another date.</p>
+        ) : (
+          /* Step 2: pick a time + details → POST to our API endpoint */
+          <form method="post" action="/api/reservations" class="form">
+            <input type="hidden" name="date" value={date} />
+            <fieldset class="slots">
+              <legend>Time</legend>
+              {slots.map((sl) => (
+                <label class:list={['slot', {full: sl.seatsLeft === 0}]}>
+                  <input type="radio" name="time" value={sl.time} required disabled={sl.seatsLeft === 0} />
+                  <span>{formatTime(sl.time)}</span>
+                  <small>{sl.seatsLeft === 0 ? 'Full' : `${sl.seatsLeft} seats left`}</small>
+                </label>
+              ))}
+            </fieldset>
+            <label>Party size
+              <select name="partySize" required>
+                {Array.from({length: MAX_PARTY}, (_, i) => <option value={i + 1} selected={i === 1}>{i + 1} {i === 0 ? 'guest' : 'guests'}</option>)}
+              </select>
+            </label>
+            <label>Name <input name="name" required autocomplete="name" maxlength="80" /></label>
+            <label>Email <input name="email" type="email" required autocomplete="email" /></label>
+            <label>Phone (optional) <input name="phone" type="tel" autocomplete="tel" /></label>
+            <label>Notes (optional) <textarea name="notes" rows="3" maxlength="500" placeholder="Allergies, high chair, birthday…"></textarea></label>
+            <input type="text" name="company" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true" />
+            <button class="btn" type="submit">Confirm booking</button>
+          </form>
+        )}
+      </>
+    )}
+  </div>
+</Base>

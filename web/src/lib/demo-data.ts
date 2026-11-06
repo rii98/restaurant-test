@@ -1,6 +1,6 @@
 // DEMO MODE data, used only when PUBLIC_SANITY_PROJECT_ID is empty.
 // Mirrors studio/seed/seed.ndjson so the site looks the same before and after connecting Sanity.
-import type {MenuCategory, MenuItem, SiteSettings} from './types'
+import type {MenuCategory, MenuItem, SiteSettings, Special} from './types'
 
 export const demoSettings: SiteSettings = {
   "name": "Himalayan Table",
@@ -21,6 +21,7 @@ export const demoSettings: SiteSettings = {
     "postalCode": "62701",
     "country": "US"
   },
+  "timezone": "America/Chicago",
   "hours": [
     {
       "_key": "h0",
@@ -217,4 +218,9 @@ export const demoFeatured: MenuItem[] = [
     ],
     "category": "Mains"
   }
+]
+
+export const demoSpecials = (today: string): Special[] => [
+  {_id: 'demo-1', title: 'Sel Roti & Aloo Achar', description: 'Crispy rice-flour rings with spiced potato salad.', price: 9, date: today, soldOut: false},
+  {_id: 'demo-2', title: 'Buff Choila', description: 'Smoky grilled buffalo with mustard oil and chilli.', price: 14, date: today, soldOut: true},
 ]

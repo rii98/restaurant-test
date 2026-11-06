@@ -12,6 +12,7 @@ export const structure: StructureResolver = (S) =>
         .title('Restaurant Settings')
         .id('siteSettings')
         .child(S.document().schemaType('siteSettings').documentId('siteSettings')),
+      S.documentTypeListItem('special').title('Daily Specials (live)'),
       S.divider(),
       S.documentTypeListItem('menuCategory').title('Menu Categories'),
       S.documentTypeListItem('menuItem').title('Menu Items'),

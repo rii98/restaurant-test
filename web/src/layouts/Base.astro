@@ -32,7 +32,7 @@ const restaurantLd = {
   email: s.email,
   image: ogImage,
   hasMenu: new URL('/menu/', Astro.site).href,
-  acceptsReservations: Boolean(s.reservationUrl),
+  acceptsReservations: true, // we take bookings on /reserve/
   address: s.address && {
     '@type': 'PostalAddress',
     streetAddress: s.address.street,
