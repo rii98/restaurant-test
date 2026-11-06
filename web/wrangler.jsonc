@@ -1,0 +1,11 @@
+// Cloudflare Workers config: serve the static Astro build, nothing else.
+// Having this file stops Cloudflare's build-time "auto-setup" from adding adapters/bindings.
+{
+  "$schema": "https://unpkg.com/wrangler/config-schema.json",
+  "name": "restaurant-test",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "404-page" // serve dist/404.html with a real 404 status
+  }
+}
