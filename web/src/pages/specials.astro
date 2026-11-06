@@ -18,7 +18,7 @@ const {timeZone} = runtime(s)
 const today = todayIn(timeZone)
 
 const specials = isSanityConfigured
-  ? await liveClient.fetch<Special[]>(specialsQuery, {today})
+  ? await liveClient.fetch<Special[]>(specialsQuery, {today}, {cache: 'no-store'})
   : demoSpecials(today)
 
 // Tell browsers/CDNs not to keep an old copy — this page must always be fresh.

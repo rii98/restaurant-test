@@ -17,10 +17,11 @@ export const client = createClient({
 })
 
 /**
- * Client for LIVE pages (prerender = false). Uses Sanity's API CDN: fast, cheap on quota,
- * and Sanity purges it on publish, so changes still show within a few seconds.
+ * Client for LIVE pages (prerender = false). Skips Sanity's API CDN, which can serve answers
+ * up to ~60s old. Pair with `{cache: 'no-store'}` on fetch so Cloudflare doesn't cache it either.
+ * Trade-off: every visit is one uncached Sanity API request (fine at restaurant traffic).
  */
-export const liveClient = client.withConfig({useCdn: true})
+export const liveClient = client.withConfig({useCdn: false})
 
 /** Run a GROQ query. In demo mode, returns the fallback instead. */
 export async function sanityFetch<T>(query: string, fallback: T, params: Record<string, unknown> = {}): Promise<T> {
