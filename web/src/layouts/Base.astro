@@ -1,0 +1,84 @@
+---
+import '../styles/global.css'
+import Header from '../components/Header.astro'
+import Footer from '../components/Footer.astro'
+import {getSettings} from '../lib/data'
+import {urlFor, hasImage, isSanityConfigured} from '../lib/sanity'
+
+interface Props {
+  title?: string
+  description?: string
+  /** Extra JSON-LD objects for this page (e.g. the Menu schema) */
+  jsonLd?: Record<string, unknown>[]
+}
+
+const s = await getSettings()
+const {title, description = s.seoDescription ?? s.tagline ?? '', jsonLd = []} = Astro.props
+const fullTitle = title ? `${title} | ${s.name}` : (s.seoTitle ?? s.name)
+const canonical = new URL(Astro.url.pathname, Astro.site).href
+const ogImage = hasImage(s.heroImage) ? urlFor(s.heroImage).width(1200).height(630).url() : undefined
+
+// --- Structured data: tells Google this is a Restaurant (hours, address, phone…) ---
+const DAY_URL = 'https://schema.org/'
+const restaurantLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Restaurant',
+  name: s.name,
+  url: new URL('/', Astro.site).href,
+  description: s.seoDescription ?? s.about,
+  servesCuisine: s.cuisine,
+  priceRange: s.priceRange,
+  telephone: s.phone,
+  email: s.email,
+  image: ogImage,
+  hasMenu: new URL('/menu/', Astro.site).href,
+  acceptsReservations: Boolean(s.reservationUrl),
+  address: s.address && {
+    '@type': 'PostalAddress',
+    streetAddress: s.address.street,
+    addressLocality: s.address.city,
+    addressRegion: s.address.region,
+    postalCode: s.address.postalCode,
+    addressCountry: s.address.country,
+  },
+  openingHoursSpecification: s.hours
+    ?.filter((h) => !h.closed && h.opens && h.closes)
+    .map((h) => ({'@type': 'OpeningHoursSpecification', dayOfWeek: DAY_URL + h.day, opens: h.opens, closes: h.closes})),
+  sameAs: Object.values(s.social ?? {}).filter(Boolean),
+}
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+
+    <!-- Open Graph: how links look when shared on WhatsApp, Facebook, etc. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:site_name" content={s.name} />
+    {ogImage && <meta property="og:image" content={ogImage} />}
+    <meta name="twitter:card" content="summary_large_image" />
+
+    {!isSanityConfigured && <meta name="robots" content="noindex" />}
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+
+    <script type="application/ld+json" set:html={JSON.stringify([restaurantLd, ...jsonLd])} />
+  </head>
+  <body>
+    {!isSanityConfigured && <div class="demo-banner">Demo mode: showing built-in sample data. Set PUBLIC_SANITY_PROJECT_ID to connect Sanity.</div>}
+    <Header settings={s} />
+    <main><slot /></main>
+    <Footer settings={s} />
+  </body>
+</html>

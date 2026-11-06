@@ -1,0 +1,16 @@
+---
+import {formatTime} from '../lib/format'
+import type {OpeningHours} from '../lib/types'
+interface Props { hours?: OpeningHours[] }
+const {hours = []} = Astro.props
+---
+<table class="hours">
+  <tbody>
+    {hours.map((h) => (
+      <tr>
+        <th scope="row">{h.day}</th>
+        <td>{h.closed ? 'Closed' : `${formatTime(h.opens)} – ${formatTime(h.closes)}`}</td>
+      </tr>
+    ))}
+  </tbody>
+</table>

@@ -1,0 +1,24 @@
+{
+  "name": "restaurant-studio",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "sanity dev",
+    "build": "sanity build",
+    "deploy": "sanity deploy",
+    "seed": "sanity dataset import seed/seed.ndjson production --replace"
+  },
+  "dependencies": {
+    "@sanity/vision": "^6.22.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "sanity": "^6.22.0",
+    "styled-components": "^6.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "@types/react": "^19.3.0",
+    "typescript": "^5.9.3"
+  }
+}

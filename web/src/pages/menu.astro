@@ -1,0 +1,48 @@
+---
+import Base from '../layouts/Base.astro'
+import MenuItemCard from '../components/MenuItemCard.astro'
+import {getMenu, getSettings} from '../lib/data'
+import {DIETARY_LABELS} from '../lib/format'
+
+const s = await getSettings()
+const menu = await getMenu()
+
+// schema.org Menu: lets Google understand individual dishes and prices
+const menuLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Menu',
+  name: `${s.name} Menu`,
+  hasMenuSection: menu.map((cat) => ({
+    '@type': 'MenuSection',
+    name: cat.title,
+    description: cat.description,
+    hasMenuItem: cat.items.map((i) => ({
+      '@type': 'MenuItem',
+      name: i.name,
+      description: i.description,
+      offers: {'@type': 'Offer', price: i.price, priceCurrency: s.currency},
+    })),
+  })),
+}
+---
+<Base title="Menu" description={`See the full ${s.cuisine ?? ''} menu at ${s.name}, with prices.`} jsonLd={[menuLd]}>
+  <section class="page-head container">
+    <h1>Menu</h1>
+    <nav class="cat-nav" aria-label="Menu sections">
+      {menu.map((c) => <a href={`#${c.slug}`}>{c.title}</a>)}
+    </nav>
+  </section>
+
+  <div class="container narrow">
+    {menu.map((cat) => (
+      <section id={cat.slug} class="menu-section">
+        <h2>{cat.title}</h2>
+        {cat.description && <p class="muted">{cat.description}</p>}
+        {cat.items.map((item) => <MenuItemCard item={item} currency={s.currency} />)}
+      </section>
+    ))}
+    <p class="muted legend">
+      {Object.entries(DIETARY_LABELS).map(([k, v]) => <span>{v} = {k}</span>)}
+    </p>
+  </div>
+</Base>

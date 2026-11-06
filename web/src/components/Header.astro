@@ -1,0 +1,25 @@
+---
+import type {SiteSettings} from '../lib/types'
+interface Props { settings: SiteSettings }
+const {settings} = Astro.props
+const path = Astro.url.pathname
+const links = [
+  {href: '/', label: 'Home'},
+  {href: '/menu/', label: 'Menu'},
+  {href: '/contact/', label: 'Visit'},
+]
+---
+{settings.announcement && <div class="announcement">{settings.announcement}</div>}
+<header class="site-header">
+  <div class="container nav">
+    <a href="/" class="brand">{settings.name}</a>
+    <nav aria-label="Main">
+      <ul>
+        {links.map((l) => (
+          <li><a href={l.href} aria-current={path === l.href ? 'page' : undefined}>{l.label}</a></li>
+        ))}
+      </ul>
+    </nav>
+    {settings.reservationUrl && <a class="btn btn-small" href={settings.reservationUrl} rel="noopener">Book a table</a>}
+  </div>
+</header>

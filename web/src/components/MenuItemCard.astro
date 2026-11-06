@@ -1,0 +1,22 @@
+---
+import SanityImg from './SanityImg.astro'
+import {formatPrice, DIETARY_LABELS} from '../lib/format'
+import {hasImage} from '../lib/sanity'
+import type {MenuItem} from '../lib/types'
+interface Props { item: MenuItem; currency: string; showImage?: boolean }
+const {item, currency, showImage = false} = Astro.props
+---
+<article class="dish">
+  {showImage && hasImage(item.image) && <SanityImg image={item.image} aspect={4 / 3} sizes="(min-width: 800px) 33vw, 100vw" class="dish-img" />}
+  <div class="dish-head">
+    <h3>{item.name}</h3>
+    <span class="dot-leader" aria-hidden="true"></span>
+    <span class="price">{formatPrice(item.price, currency)}</span>
+  </div>
+  {item.description && <p>{item.description}</p>}
+  {item.dietary?.length ? (
+    <ul class="tags" aria-label="Dietary information">
+      {item.dietary.map((d) => <li title={d}>{DIETARY_LABELS[d] ?? d}</li>)}
+    </ul>
+  ) : null}
+</article>

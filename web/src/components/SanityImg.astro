@@ -1,0 +1,32 @@
+---
+// Responsive image served from Sanity's CDN (auto WebP/AVIF, cropped to the editor's hotspot).
+import {urlFor, hasImage} from '../lib/sanity'
+import type {SanityImage} from '../lib/types'
+
+interface Props {
+  image?: SanityImage
+  /** width / height, e.g. 16/9 */
+  aspect?: number
+  sizes?: string
+  eager?: boolean
+  class?: string
+}
+const {image, aspect = 4 / 3, sizes = '100vw', eager = false, class: className} = Astro.props
+const widths = [400, 800, 1200, 1600]
+---
+{hasImage(image) ? (
+  <img
+    class={className}
+    src={urlFor(image).width(1200).height(Math.round(1200 / aspect)).url()}
+    srcset={widths.map((w) => `${urlFor(image).width(w).height(Math.round(w / aspect)).url()} ${w}w`).join(', ')}
+    sizes={sizes}
+    width={1200}
+    height={Math.round(1200 / aspect)}
+    alt={image.alt ?? ''}
+    loading={eager ? 'eager' : 'lazy'}
+    fetchpriority={eager ? 'high' : 'auto'}
+    decoding="async"
+  />
+) : (
+  <div class:list={['img-placeholder', className]} style={`aspect-ratio:${aspect}`} aria-hidden="true"></div>
+)}

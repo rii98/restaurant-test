@@ -1,0 +1,69 @@
+---
+import Base from '../layouts/Base.astro'
+import SanityImg from '../components/SanityImg.astro'
+import MenuItemCard from '../components/MenuItemCard.astro'
+import Hours from '../components/Hours.astro'
+import {getFeatured, getSettings} from '../lib/data'
+
+const s = await getSettings()
+const featured = await getFeatured()
+---
+<Base>
+  <section class="hero">
+    <SanityImg image={s.heroImage} aspect={16 / 9} eager class="hero-img" />
+    <div class="hero-overlay"></div>
+    <div class="container hero-content">
+      {s.cuisine && <p class="eyebrow">{s.cuisine} kitchen</p>}
+      <h1>{s.name}</h1>
+      {s.tagline && <p class="lead">{s.tagline}</p>}
+      <div class="actions">
+        <a class="btn" href="/menu/">View menu</a>
+        {s.orderUrl && <a class="btn btn-ghost" href={s.orderUrl} rel="noopener">Order online</a>}
+      </div>
+    </div>
+  </section>
+
+  {s.about && (
+    <section class="section container narrow">
+      <h2>Our story</h2>
+      <p class="lead">{s.about}</p>
+    </section>
+  )}
+
+  {featured.length > 0 && (
+    <section class="section alt">
+      <div class="container">
+        <h2>Guest favourites</h2>
+        <div class="grid-3">
+          {featured.map((item) => <MenuItemCard item={item} currency={s.currency} showImage />)}
+        </div>
+        <p class="center"><a class="btn" href="/menu/">Full menu</a></p>
+      </div>
+    </section>
+  )}
+
+  {s.gallery && s.gallery.length > 0 && (
+    <section class="section container">
+      <h2>Inside {s.name}</h2>
+      <div class="gallery">
+        {s.gallery.map((img) => <SanityImg image={img} aspect={1} sizes="(min-width: 800px) 25vw, 50vw" />)}
+      </div>
+    </section>
+  )}
+
+  <section class="section alt">
+    <div class="container two-col">
+      <div>
+        <h2>Opening hours</h2>
+        <Hours hours={s.hours} />
+      </div>
+      <div>
+        <h2>Find us</h2>
+        {s.address && (
+          <p class="lead">{s.address.street}<br />{s.address.city}{s.address.region && `, ${s.address.region}`} {s.address.postalCode}</p>
+        )}
+        <a class="btn" href="/contact/">Directions & contact</a>
+      </div>
+    </div>
+  </section>
+</Base>

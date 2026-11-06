@@ -1,0 +1,25 @@
+---
+import type {SiteSettings} from '../lib/types'
+interface Props { settings: SiteSettings }
+const {settings: s} = Astro.props
+const a = s.address
+---
+<footer class="site-footer">
+  <div class="container footer-grid">
+    <div>
+      <p class="brand">{s.name}</p>
+      {s.tagline && <p>{s.tagline}</p>}
+    </div>
+    <address>
+      {a && <>{a.street}<br />{a.city}{a.region && `, ${a.region}`} {a.postalCode}<br /></>}
+      {s.phone && <a href={`tel:${s.phone.replace(/[^+\d]/g, '')}`}>{s.phone}</a>}<br />
+      {s.email && <a href={`mailto:${s.email}`}>{s.email}</a>}
+    </address>
+    <ul class="social">
+      {s.social?.instagram && <li><a href={s.social.instagram} rel="noopener">Instagram</a></li>}
+      {s.social?.facebook && <li><a href={s.social.facebook} rel="noopener">Facebook</a></li>}
+      {s.social?.tiktok && <li><a href={s.social.tiktok} rel="noopener">TikTok</a></li>}
+    </ul>
+  </div>
+  <p class="container copyright">© {new Date().getFullYear()} {s.name}</p>
+</footer>
