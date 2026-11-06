@@ -14,11 +14,20 @@ function resolveSite() {
   const raw = (env.SITE_URL || process.env.CF_PAGES_URL || '').trim()
   if (!raw) return 'https://example.com'
   const withProtocol = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`
+  let url
   try {
-    return new URL(withProtocol).origin
+    url = new URL(withProtocol)
   } catch {
-    throw new Error(`SITE_URL is not a valid URL: "${raw}". Use e.g. https://myrestaurant.com`)
+    url = undefined
   }
+  // A real domain has a dot (myrestaurant.com, my-site.pages.dev); "riyaj2" alone is just a name.
+  if (!url || (!url.hostname.includes('.') && url.hostname !== 'localhost')) {
+    throw new Error(
+      `SITE_URL must be the full site address, got "${raw}". ` +
+        'Use e.g. https://my-project.pages.dev or https://myrestaurant.com',
+    )
+  }
+  return url.origin
 }
 
 export default defineConfig({
