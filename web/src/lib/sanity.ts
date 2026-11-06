@@ -1,4 +1,4 @@
-import {createClient} from '@sanity/client'
+import {createClient, type FilteredResponseQueryOptions} from '@sanity/client'
 import {createImageUrlBuilder} from '@sanity/image-url'
 import type {SanityImage} from './types'
 
@@ -22,6 +22,12 @@ export const client = createClient({
  * Trade-off: every visit is one uncached Sanity API request (fine at restaurant traffic).
  */
 export const liveClient = client.withConfig({useCdn: false})
+
+/**
+ * Fetch option telling Cloudflare not to cache the request to Sanity.
+ * @sanity/client forwards `cache` to fetch() at runtime, but only types it for Next.js — hence the cast.
+ */
+export const NO_STORE = {cache: 'no-store'} as unknown as FilteredResponseQueryOptions
 
 /** Run a GROQ query. In demo mode, returns the fallback instead. */
 export async function sanityFetch<T>(query: string, fallback: T, params: Record<string, unknown> = {}): Promise<T> {

@@ -5,7 +5,7 @@ export const prerender = false
 import Base from '../layouts/Base.astro'
 import SanityImg from '../components/SanityImg.astro'
 import {getSettings} from '../lib/data'
-import {liveClient, isSanityConfigured} from '../lib/sanity'
+import {liveClient, isSanityConfigured, NO_STORE} from '../lib/sanity'
 import {specialsQuery} from '../lib/queries'
 import {demoSpecials} from '../lib/demo-data'
 import {formatPrice} from '../lib/format'
@@ -18,7 +18,7 @@ const {timeZone} = runtime(s)
 const today = todayIn(timeZone)
 
 const specials = isSanityConfigured
-  ? await liveClient.fetch<Special[]>(specialsQuery, {today}, {cache: 'no-store'})
+  ? await liveClient.fetch<Special[]>(specialsQuery, {today}, NO_STORE)
   : demoSpecials(today)
 
 // Tell browsers/CDNs not to keep an old copy — this page must always be fresh.
